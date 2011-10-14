@@ -219,7 +219,7 @@
       (invalid :min-length-not-reached {:minLength (schema :minLength) :actual (count instance) })))
 
   (when (schema :pattern)
-    (if-not (.matches instance (schema :pattern))
+    (if-not (.matches ^String instance (schema :pattern))
       (invalid :pattern-not-matched {:pattern (schema :pattern) :actual instance}))))
 
 (defmethod validate* "enum"
