@@ -24,8 +24,8 @@
   `(let [body# #(do ~@body
                     (process-errors @(:errors *validation-context*)))]
      (if-not *validation-context*
-       (binding [*validation-context* {:errors (ref '())
-                                   :path (ref [])}]
+       (binding [*validation-context* {:errors (atom '())
+                                       :path   (atom  [])}]
          (body#))
        (body#))))
 
@@ -36,9 +36,9 @@
   `(binding [*parent* ~parent]
      (if-let [{path# :path} *validation-context*]
        (do
-         (dosync alter path# conj ~rel-path)
+         (swap! path# conj ~rel-path)
          ~@body
-         (dosync alter path# pop))
+         (swap! path# pop))
        (do ~@body))))
 
 
@@ -50,8 +50,8 @@
         data (second args)]
     `(let [error# {:ref ~path :key ~key :data ~data}]
        (if-let [{errors# :errors path# :path} *validation-context*]
-         (dosync (alter errors# conj
-                        (merge {:path (conj @path# ~path)} error#))))
+         (swap! errors# conj
+                        (merge {:path (conj @path# ~path)} error#)))
        (process-errors (list error#)))))
 
 
