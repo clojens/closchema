@@ -1,4 +1,4 @@
-(defproject closchema "0.0.3-SNAPSHOT"
+(defproject org.clojars.hms/closchema "0.0.2"
   :description "Implements the JSON Schema specification."
   :dependencies [[org.clojure/clojure "1.3.0"]]
   :dev-dependencies [[swank-clojure "1.3.2"]]

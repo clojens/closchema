@@ -2,7 +2,8 @@
   "This is JSON Schema in Clojure. See http://tools.ietf.org/html/draft-zyp-json-schema-02
  Main purposed is to allow object validation, but schema metadata can be used for exposing contracts as well."
   (:use clojure.walk clojure.template)
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set])
+  (:import [java.util ArrayList Stack]))
 
 
 (def ^{:doc "Allow validation errors to be captured." :dynamic true}
@@ -22,10 +23,10 @@
   "Defines a binding to allow access to the root object and to enable invalidations to be captured. This strategy removes the need of raising exceptions at every single invalid point, and allows context information to be used when reporting about errors. Nested contexts are just ignored."
   [& body]
   `(let [body# #(do ~@body
-                    (process-errors @(:errors *validation-context*)))]
+                    (process-errors (:errors *validation-context*)))]
      (if-not *validation-context*
-       (binding [*validation-context* {:errors (atom '())
-                                       :path   (atom  [])}]
+       (binding [*validation-context* {:errors (ArrayList.)
+                                       :path   (Stack.)}]
          (body#))
        (body#))))
 
@@ -34,11 +35,11 @@
   "Step inside a relative path, from a previous object. This information is useful for reporting."
   [parent rel-path & body]
   `(binding [*parent* ~parent]
-     (if-let [{path# :path} *validation-context*]
+     (if-let [^Stack path# (:path *validation-context*)]
        (do
-         (swap! path# conj ~rel-path)
+         (.push path# ~rel-path)
          ~@body
-         (swap! path# pop))
+         (.pop path#))
        (do ~@body))))
 
 
@@ -49,9 +50,10 @@
         key (first args)
         data (second args)]
     `(let [error# {:ref ~path :key ~key :data ~data}]
-       (if-let [{errors# :errors path# :path} *validation-context*]
-         (swap! errors# conj
-                        (merge {:path (conj @path# ~path)} error#)))
+       (let [^Stack path# (:path *validation-context*)
+             ^ArrayList errors# (:errors *validation-context*)
+             error-path# (if-not (.isEmpty path#) (.peek path#) ~path)]
+         (.add errors# (merge {:path error-path#} error#)))
        (process-errors (list error#)))))
 
 
