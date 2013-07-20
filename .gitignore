@@ -2,5 +2,6 @@ lib
 *.jar
 .emacs.desktop
 /pom.xml
+/.lein-*
+target/*
 /classes/
-/.lein-failures
